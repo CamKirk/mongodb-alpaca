@@ -2,6 +2,7 @@ from alpaca_trade_api import REST, TimeFrame
 import sys
 import pandas as pd
 from datetime import timedelta, date
+import pymongo
 from pymongo import MongoClient
 
 # Alpaca api setup
@@ -47,7 +48,17 @@ elif lastrow.signal < 0:
     signal="BUY"
 
 # store row in mongo
-reports_coll.insert_one(lastrow.to_dict())
+report_data = {
+        "ticker": ticker,
+        "sma20": lastrow.SMA20,
+        "sma50": lastrow.SMA50,
+        "direction": direction,
+        "distance": lastrow.distance,
+        "signal": signal,
+        "close": lastrow.close
+        }
+
+reports_coll.insert_one(report_data)
 
 # message prep
 message = f"""
@@ -61,7 +72,7 @@ The most recent price is: {lastrow.close}
 """
 print(message)
 
-last_report = reports_coll.find_one()
+last_report = reports_coll.find_one(sort=[("_id",pymongo.DESCENDING)])
 
 print(last_report)
 
